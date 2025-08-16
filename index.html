@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小惊喜 Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #fff;
+        }
+
+        .photo-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .photo-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .photo-row.landscape-2 {
+            height: 400px;
+        }
+
+        .photo-row.landscape-4 {
+            height: 300px;
+        }
+
+        .photo-row.portrait-3 {
+            height: 600px;
+        }
+
+        .photo-item {
+            position: relative;
+            background: #111;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-row.landscape-2 .photo-item {
+            flex: 1;
+        }
+
+        .photo-row.landscape-4 .photo-item {
+            flex: 1;
+        }
+
+        .photo-row.portrait-3 .photo-item {
+            flex: 1;
+        }
+
+        .photo-item:hover {
+            transform: scale(1.02);
+            z-index: 1;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+
+        .photo-item:hover img {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .photo-row {
+                flex-direction: column;
+                height: auto !important;
+            }
+
+            .photo-item {
+                height: 300px;
+            }
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 40px auto;
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .video-container video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            display: block;
+            background: #000;
+        }
+
+        .video-container + .video-container {
+            margin-top: 20px;
+        }
+
+        .video-section {
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .video-section h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            position: relative;
+            margin: auto;
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .modal-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .modal-nav {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 20px;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .modal-prev {
+            left: 20px;
+        }
+
+        .modal-next {
+            right: 20px;
+        }
+
+        .modal-nav:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .modal-nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 照片部分会在这里动态生成 -->
+    </div>
+
+    <!-- 模态框 -->
+    <div class="modal" id="modal">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <button class="modal-nav modal-prev" onclick="showPrevImage()">‹</button>
+        <button class="modal-nav modal-next" onclick="showNextImage()">›</button>
+        <div class="modal-content">
+            <img class="modal-img" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+        const sections = [
+            {
+                title: "Dance1",
+                images: [
+                    "a_dance/22A969AC-9FD4-45FA-AA87-EB0D68705AEB_4_5005_c.jpeg",
+                    "a_dance/DSC00769.JPG",
+                    "a_dance/DSC00813.JPG",
+                    "a_dance/DSC00839.JPG",
+                    "a_dance/DSC00847.JPG",
+                    "a_dance/DSC00853.JPG"
+                ]
+            },
+            {
+                title: "Dance2",
+                images: [
+                    "dance2/DSC01961.JPG",
+                    "dance2/DSC01980.JPG",
+                    "dance2/DSC02000.JPG",
+                    "dance2/DSC02003.JPG",
+                    "dance2/DSC02074.JPG",
+                    "dance2/DSC02091.JPG",
+                    "dance2/DSC02111.JPG",
+                    "dance2/DSC02129.JPG",
+                    "dance2/DSC02140.JPG",
+                    "dance2/DSC02143.JPG",
+                    "dance2/DSC02145.JPG"
+                ]
+            },
+            {
+                title: "Santa Cruz",
+                images: [
+                    "c_sc/91B06C14-8B8E-409D-B942-884461C40075_1_105_c.jpeg",
+                    "c_sc/DSC01180.JPG",
+                    "c_sc/DSC01262.JPG",
+                    "c_sc/DSC01280.JPG",
+                    "c_sc/DSC01341.JPG",
+                    "c_sc/DSC01344.JPG",
+                    "c_sc/DSC01357.JPG"
+                ]
+            },
+            {
+                title: "🐢📷Jennie's Masterpiece",
+                images: [
+                    "stanford/2C3F5CB5-D74F-4F1D-BD58-6A5268DC2114_4_5005_c.jpeg",
+                    "stanford/36FF59A4-C8E9-4B99-A4BF-D49639FCED20_4_5005_c.jpeg",
+                    "stanford/6F0C20F7-5A2C-45A5-83A8-0A95936103A0_4_5005_c.jpeg",
+                    "stanford/DSC01081.JPG",
+                    "stanford/DSC01105.JPG",
+                    "stanford/DSC01119.JPG",
+                    "stanford/DSC01121.JPG",
+                    "stanford/DSC02224.JPG",
+                    "stanford/E1D5CDB9-76BA-4EBE-AC33-79EB65AF92CF_4_5005_c.jpeg",
+                    "stanford/EA049C6A-66E9-4DE7-9A92-504259DAFE05_4_5005_c.jpeg"
+                ]
+            },
+            {
+                title: "San Francisco",
+                images: [
+                    "sf/58F4BCC4-FB3C-4306-83F5-6BF24E02D291_1_105_c.jpeg",
+                    "sf/C98C4799-8309-46DA-876B-D9672F578011_1_105_c.jpeg",
+                    "sf/DSC01561.JPG",
+                    "sf/DSC01616.JPG",
+                    "sf/DSC01618.JPG",
+                    "sf/DSC01723.JPG",
+                    "sf/DSC01822.JPG",
+                    "sf/DSC01835.JPG"
+                ]
+            },
+
+            {
+                title: "Moments",
+                images: [
+                    "93E0ACD7-A59A-425E-BE2C-0577A1F90FAC_1_105_c.jpeg",
+                    "9D57C4EC-61E1-4E69-BD26-7EC607C371AC_4_5005_c.jpeg",
+                    "daily/DSC02233.JPG"
+                ]
+            }
+        ];
+
+        const container = document.querySelector('.container');
+        const modal = document.getElementById('modal');
+        const modalImg = modal.querySelector('.modal-img');
+        let currentImageIndex = 0;
+        let currentImages = [];
+
+        // 创建照片网格
+        sections.forEach(section => {
+            const sectionEl = document.createElement('div');
+            sectionEl.className = 'section';
+            
+            const titleEl = document.createElement('h2');
+            titleEl.className = 'section-title';
+            titleEl.textContent = section.title;
+            sectionEl.appendChild(titleEl);
+
+            const gridEl = document.createElement('div');
+            gridEl.className = 'photo-grid';
+
+            // 创建临时数组存储图片和它们的方向
+            const imageInfos = [];
+            let loadedImages = 0;
+
+            section.images.forEach((imgSrc, index) => {
+                const img = new Image();
+                img.src = imgSrc;
+                img.onload = () => {
+                    imageInfos[index] = {
+                        src: imgSrc,
+                        isLandscape: img.naturalWidth > img.naturalHeight
+                    };
+                    loadedImages++;
+
+                    // 当所有图片加载完成后开始布局
+                    if (loadedImages === section.images.length) {
+                        createLayout(imageInfos, gridEl);
+                    }
+                };
+            });
+
+            sectionEl.appendChild(gridEl);
+            container.appendChild(sectionEl);
+        });
+
+        function createLayout(imageInfos, gridEl) {
+            let currentRow = [];
+            let landscapeCount = 0;
+            let portraitCount = 0;
+
+            imageInfos.forEach((info, index) => {
+                if (info.isLandscape) {
+                    landscapeCount++;
+                    currentRow.push(info);
+                    
+                    if (landscapeCount === 2) {
+                        // 创建两张横图的行
+                        createPhotoRow(currentRow, gridEl, 'landscape-2');
+                        currentRow = [];
+                        landscapeCount = 0;
+                    } else if (landscapeCount === 4) {
+                        // 创建四张横图的行
+                        createPhotoRow(currentRow, gridEl, 'landscape-4');
+                        currentRow = [];
+                        landscapeCount = 0;
+                    }
+                } else {
+                    portraitCount++;
+                    currentRow.push(info);
+                    
+                    if (portraitCount === 3) {
+                        // 创建三张竖图的行
+                        createPhotoRow(currentRow, gridEl, 'portrait-3');
+                        currentRow = [];
+                        portraitCount = 0;
+                    }
+                }
+            });
+
+            // 处理剩余的图片
+            if (currentRow.length > 0) {
+                if (currentRow[0].isLandscape) {
+                    createPhotoRow(currentRow, gridEl, currentRow.length === 2 ? 'landscape-2' : 'landscape-4');
+                } else {
+                    createPhotoRow(currentRow, gridEl, 'portrait-3');
+                }
+            }
+        }
+
+        function createPhotoRow(images, container, type) {
+            const row = document.createElement('div');
+            row.className = `photo-row ${type}`;
+
+            images.forEach(info => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                
+                const img = document.createElement('img');
+                img.src = info.src;
+                img.loading = 'lazy';
+                img.alt = '';
+                
+                photoItem.addEventListener('click', () => {
+                    openModal(info.src, currentImages);
+                });
+                
+                photoItem.appendChild(img);
+                row.appendChild(photoItem);
+            });
+
+            container.appendChild(row);
+        }
+
+        // 添加视频部分
+        const videoSection = document.createElement('div');
+        videoSection.className = 'video-section';
+        
+        const videoTitle = document.createElement('h2');
+        videoTitle.textContent = '🎬 Videos';
+        videoSection.appendChild(videoTitle);
+        
+        const videos = ['2741.mp4'];
+        
+        videos.forEach(videoSrc => {
+            const videoContainer = document.createElement('div');
+            videoContainer.className = 'video-container';
+            
+            const video = document.createElement('video');
+            video.src = videoSrc;
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            
+            videoContainer.appendChild(video);
+            videoSection.appendChild(videoContainer);
+        });
+        
+        container.appendChild(videoSection);
+
+        // 模态框功能
+        function openModal(imgSrc, images) {
+            modalImg.src = imgSrc;
+            currentImages = images;
+            currentImageIndex = images.indexOf(imgSrc);
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function showPrevImage() {
+            currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+            modalImg.src = currentImages[currentImageIndex];
+        }
+
+        function showNextImage() {
+            currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+            modalImg.src = currentImages[currentImageIndex];
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (!modal.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'ArrowLeft') showPrevImage();
+            if (e.key === 'ArrowRight') showNextImage();
+        });
+
+        // 点击模态框背景关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+    </script>
+</body>
+</html>
